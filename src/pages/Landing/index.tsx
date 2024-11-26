@@ -19,12 +19,16 @@ import {
   leftVariant,
   contVariant,
 } from "../../animations/landing";
+
+import { useEffect } from "react";
+import { useSignMessage } from "wagmi";
 import logo from "../../assets/images/logo.png";
 
 const Landing = () => {
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const navigate = useNavigate();
+  const { signMessageAsync } = useSignMessage();
 
   const handleConnectWallet = () => {
     open();
@@ -36,6 +40,82 @@ const Landing = () => {
       navigate("/dashboard");
     }
   };
+
+  const message = `Welcome to LegacyX! Please sign this message to authenticate.
+
+Wallet: ${address}
+Nonce: ${Math.floor(Math.random() * 1000000)}
+Timestamp: ${new Date().toISOString()}
+Domain: legacyx.com
+
+This signature does not trigger any blockchain transaction or cost gas fees.
+`;
+
+  const authUser = async (signature: string) => {
+    const response = await fetch(`https://jinkai.onrender.com/api/verify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        walletAddress: address,
+        signature: signature,
+        message: message,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data?.user) {
+      localStorage.setItem("token", data.user.token);
+    }
+
+    console.log(data);
+  };
+
+  const hasSigned = localStorage.getItem("token");
+
+  useEffect(() => {
+    let mounted = true;
+
+    const promptSignMessage = async () => {
+      try {
+        if (!mounted) return;
+        console.log("Requesting signature...");
+        signMessageAsync({
+          message: message,
+        })
+          .then(async (data) => {
+            localStorage.setItem("hasSigned", "true");
+            console.log("Signature:", data);
+            console.log("Address:", address);
+
+            await authUser(data);
+          })
+          .catch((error) => {
+            console.log("Signature request failed:", error);
+          });
+        if (!mounted) return;
+        // console.log("Signature:", signature); // This should now show the signature
+      } catch (error) {
+        if (!mounted) return;
+        console.error("Signature request failed:", error);
+      }
+    };
+
+    if (isConnected) {
+      setTimeout(() => {
+        if (mounted && !hasSigned) {
+          promptSignMessage();
+        }
+      }, 100);
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [isConnected, signMessageAsync]); // Updated dependency
+
   return (
     <div className="landing-page">
       <div className="ring-parent">
@@ -127,7 +207,6 @@ const Landing = () => {
                 instructions. No intermediaries, no delays.
               </p>
             </div>
-
             <div className="section-item">
               <img src={trustfund} alt="trustfund" />
 
@@ -185,7 +264,7 @@ const Landing = () => {
         </div>
 
         <div className="connect-wallet-flex">
-        <img src={logo} className="w-[114px]" alt="logo" />
+          <img src={logo} className="w-[114px]" alt="logo" />
           <button className="get-started-btn" onClick={handleConnectWallet}>
             {isConnected ? formatAddress(address ?? "") : "Connect Wallet"}
           </button>
