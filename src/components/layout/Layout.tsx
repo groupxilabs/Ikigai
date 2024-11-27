@@ -168,10 +168,10 @@ export const Layout = ({
         </div>
         {showSidebar && (
           <div className="w-full fixed z-20 bg-black top-0 left-0 h-full bg-opacity-10 backdrop-blur-lg">
-            <div className="w-[250px] p-[1px] bg-gradient-to-r from-[#8AD4EC99] via-[#EF96FF99] to-[#FF56A999] h-[98%] max-h-full fixed rounded-lg flex lg:hidden">
+            <div className="w-[250px] p-[1px] bg-gradient-to-r from-[#8AD4EC99] via-[#EF96FF99] to-[#FF56A999] h-full max-h-full fixed rounded-lg flex lg:hidden">
               <div className="w-full h-full bg-black rounded-[inherit] p-4 flex flex-col text-white">
                 <div className="w-full flex items-center justify-between">
-                  <img className="max-w-[150px]" src={logo} />
+                <img src={logo} className="w-[114px] cursor-pointer" alt="logo" onClick={() => navigate("/")} />
 
                   <span onClick={() => setShowSidebar(!showSidebar)}>
                     <IoClose color="white" size={26} />
