@@ -8,9 +8,14 @@ import eth2 from "../../assets/images/eth2.png";
 import eth3 from "../../assets/images/eth3.png";
 import eth4 from "../../assets/images/eth4.png";
 import rings from "../../assets/icons/rings.svg";
+import { BrowserProvider, Eip1193Provider } from "ethers";
 
 import "./style.scss";
-import { useAppKit, useAppKitAccount } from "@reown/appkit/react"; // import useAppKitProvider
+import {
+  useAppKit,
+  useAppKitAccount,
+  useAppKitProvider,
+} from "@reown/appkit/react"; // import useAppKitProvider
 import { formatAddress } from "../../utils/helpers";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -21,13 +26,14 @@ import {
 } from "../../animations/landing";
 import logo from "../../assets/images/logo.png";
 import { SummaryItem } from "../Dashboard/Dashboard";
+import { useEffect } from "react";
 
 const Landing = () => {
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const navigate = useNavigate();
 
-  // const {walletProvider} = useAppKitProvider("eip155"); // uncomment 
+  const { walletProvider } = useAppKitProvider("eip155"); // uncomment
 
   const handleConnectWallet = () => {
     open();
@@ -40,14 +46,79 @@ const Landing = () => {
       navigate("/dashboard");
     }
   };
-    
-// signMessage here
-  // const onSignMessage = async()=> {
-  //   const provider = new BrowserProvider(walletProvider as Eip1193Provider)
-  //   const signer = await provider.getSigner()
-  //   const signature = await signer?.signMessage('Hello, this is LegacyX')
-  //   console.log(signature)
-  // }
+  const message = `Welcome to LegacyX! Please sign this message to authenticate.
+  Wallet: ${address}
+  Nonce: ${Math.floor(Math.random() * 1000000)}
+  Timestamp: ${new Date().toISOString()}
+  Domain: legacyx.com
+  This signature does not trigger any blockchain transaction or cost gas fees.
+  `;
+
+  const authUser = async (signature: string) => {
+    const response = await fetch(`https://jinkai.onrender.com/api/verify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        walletAddress: address,
+        signature: signature,
+        message: message,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data?.user) {
+      localStorage.setItem("token", data.user.token);
+    }
+
+    console.log(data);
+  };
+
+  const hasSigned = localStorage.getItem("token");
+
+  // signMessage here
+  const onSignMessage = async () => {
+    const provider = new BrowserProvider(walletProvider as Eip1193Provider);
+    const signer = await provider.getSigner();
+    const signature = await signer?.signMessage(message);
+
+    if (signature) {
+      console.log("signature", signature);
+      authUser(signature);
+    }
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const promptSignMessage = async () => {
+      try {
+        if (!mounted) return;
+        console.log("Requesting signature...");
+        onSignMessage();
+
+        if (!mounted) return;
+        // console.log("Signature:", signature); // This should now show the signature
+      } catch (error) {
+        if (!mounted) return;
+        console.error("Signature request failed:", error);
+      }
+    };
+
+    if (isConnected) {
+      setTimeout(() => {
+        if (mounted && !hasSigned) {
+          promptSignMessage();
+        }
+      }, 100);
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [isConnected]);
 
   return (
     <div className="landing-page">
