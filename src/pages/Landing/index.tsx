@@ -12,7 +12,7 @@ import rings from "../../assets/icons/rings.svg";
 import "./style.scss";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react"; // import useAppKitProvider
 import { formatAddress } from "../../utils/helpers";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   textVariant,
@@ -27,7 +27,7 @@ const Landing = () => {
   const { address, isConnected } = useAppKitAccount();
   const navigate = useNavigate();
 
-  // const {walletProvider} = useAppKitProvider("eip155"); // uncomment 
+  // const {walletProvider} = useAppKitProvider("eip155"); // uncomment
 
   const handleConnectWallet = () => {
     open();
@@ -40,8 +40,8 @@ const Landing = () => {
       navigate("/dashboard");
     }
   };
-    
-// signMessage here
+
+  // signMessage here
   // const onSignMessage = async()=> {
   //   const provider = new BrowserProvider(walletProvider as Eip1193Provider)
   //   const signer = await provider.getSigner()
@@ -182,9 +182,9 @@ const Landing = () => {
               variants={leftVariant}
             >
               <div className="flex gap-2 flex-wrap w-full btn-flex">
-                <a href="#hero">Get Started</a>
+                <Link to="#hero">Get Started</Link>
 
-                <a href="/claim">Claim will</a>
+                <Link to="/claim">Claim will</Link>
               </div>
             </motion.div>
           </div>
